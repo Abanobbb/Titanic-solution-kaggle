@@ -1,0 +1,11 @@
+predictions = SVMclassifier.predict(test_ohe)
+
+submission = pd.DataFrame({'PassengerId':original_test['PassengerId'],'Survived':predictions})
+
+#Convert DataFrame to a csv file that can be uploaded
+#This is saved in the same directory as your notebook
+filename = 'Titanic Predictions 1.csv'
+
+submission.to_csv(filename,index=False)
+
+print('Saved file: ' + filename)
