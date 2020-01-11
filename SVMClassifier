@@ -1,0 +1,82 @@
+# Imports needed for the script
+import pandas as pd
+
+#download the kaggle in the current directory
+
+# Loading the data
+train = pd.read_csv('train.csv')
+test = pd.read_csv('test.csv')
+
+original_train = train.copy() # Using 'copy()' allows to clone the dataset
+original_test = test.copy() # Using 'copy()' allows to clone the dataset
+
+#take a look at the data
+train.head()
+train.info()
+train.head()
+train.describe()   
+train.isnull().sum()
+
+# explore how correlated each col to the survival
+corr_matrix = train.corr()
+corr_matrix['Survived'].sort_values(ascending=False)
+
+# fill the missing values in the Age column  
+mean_age = train['Age'].mean()  
+train['Age'] = train['Age'].fillna( mean_age)
+test['Age'] = test['Age'].fillna( mean_age)
+    
+# droping columns if more than 20% is missing    
+train = train.dropna(thresh=0.8*len(train), axis=1)
+test = test.dropna(thresh=0.8*len(test), axis=1)
+
+# Remove all NULLS in the Embarked column
+train['Embarked'] = train['Embarked'].fillna(method = 'ffill')
+
+# Remove all NULLS in the Fare column
+test['Fare'] = test['Fare'].fillna(train['Fare'].median())    
+
+#dropping unneeded columns    
+train = train.drop(['Name','Ticket'], axis=1)  
+test = test.drop(['Name','Ticket'], axis=1)  
+    
+#get X,Y
+x_df = train.iloc[:, 1:] #data_frame  
+y = train.iloc[: ,0:1].values
+
+
+# Encoding categorical data           
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+
+categorical_feature_mask = x_df.dtypes==object
+
+le=LabelEncoder()
+categorical_cols = x_df.columns[categorical_feature_mask].tolist()
+x_df[categorical_cols] = x_df[categorical_cols].apply(lambda col: le.fit_transform(col))
+test[categorical_cols]= test[categorical_cols].apply(lambda col: le.fit_transform(col))
+
+#applying one hot encoder
+ohe = OneHotEncoder(categorical_features = categorical_feature_mask, sparse=False )
+X_ohe = ohe.fit_transform(x_df) 
+test_ohe = ohe.fit_transform(test)
+
+# applying Feature Scaling
+from sklearn.preprocessing import StandardScaler
+sc = StandardScaler()
+X_ohe = sc.fit_transform(X_ohe)
+test_ohe  = sc.fit_transform(test_ohe)
+
+#train the model
+from sklearn.svm import SVC
+SVMclassifier = SVC(kernel = 'rbf', random_state = 0)
+SVMclassifier.fit(X_ohe, y)
+
+
+#Cross Validation
+from sklearn.model_selection import cross_val_score
+accuracies = cross_val_score(estimator = SVMclassifier, X = X_ohe, y = y, cv = 10)
+accuracies.mean()
+accuracies.std()
+
+#predict on test data
+predictions = SVMclassifier.predict(test_ohe)
