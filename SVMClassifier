@@ -66,17 +66,4 @@ sc = StandardScaler()
 X_ohe = sc.fit_transform(X_ohe)
 test_ohe  = sc.fit_transform(test_ohe)
 
-#train the model
-from sklearn.svm import SVC
-SVMclassifier = SVC(kernel = 'rbf', random_state = 0)
-SVMclassifier.fit(X_ohe, y)
-
-
-#Cross Validation
-from sklearn.model_selection import cross_val_score
-accuracies = cross_val_score(estimator = SVMclassifier, X = X_ohe, y = y, cv = 10)
-accuracies.mean()
-accuracies.std()
-
-#predict on test data
-predictions = SVMclassifier.predict(test_ohe)
+#train the model ..
